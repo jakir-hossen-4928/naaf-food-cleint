@@ -1,0 +1,59 @@
+Google Sheets: Suggested Columns for Each Sheet
+1. Users
+Column Name	Type	Description
+id	String	Unique user ID (e.g., U001)
+name	String	Moderator/Admin name
+email	String	Login email
+password_hash	String	Hashed password (for JWT login)
+mobile_number	String	Moderator phone
+telegram_chat_id	String	For Telegram notifications
+bot_token	String	Per-user Telegram Bot token
+role	Enum	Admin, Moderator
+status	Enum	Active, Inactive
+
+2. Products
+Column Name	Type	Description
+id	String	Product ID (e.g., P001)
+name	String	Product name
+sales_price	Decimal	Sale price in BDT
+production_price	Decimal	Cost of production
+discount_price	Decimal	Optional discount
+product_image_url	String	ImgBB URL
+status	Enum	Active, Inactive
+
+3. Orders
+Column Name	Type	Description
+order_id	String	NF-001, NF-002 auto-generated
+customer_name	String	
+mobile_number	String	
+email	String	Optional
+address	Text	
+moderator_id	String	Ref to Users id
+notes	Text	Optional
+product_id	String	Ref to Products id
+order_source	Enum	Messenger, Call, WhatsApp
+fraud_result	JSON/Text	Fraud API response
+delivery_charge	Decimal	
+status	Enum	Pending-Moderator, Delivered, etc.
+created_at	DateTime	
+updated_at	DateTime	
+steadfast_tracking_id	String	After successful order
+
+4. FollowUps
+Column Name	Type	Description
+followup_id	String	Unique ID (e.g., F001)
+order_id	String	Ref to Orders
+followup_date	Date	Date to remind
+notes	Text	Follow-up notes
+status	Enum	Pending, Completed
+
+5. Tasks
+Column Name	Type	Description
+task_id	String	Task ID (e.g., T001)
+order_id	String	Ref to Orders
+task_details	Text	
+assigned_to	String	Ref to Users
+status	Enum	Pending, In Progress, Completed
+created_at	DateTime	
+due_date	DateTime	
+priority	Enum	Low, Medium, High
