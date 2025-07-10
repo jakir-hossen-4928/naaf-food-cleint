@@ -1,3 +1,4 @@
+
 import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -24,33 +25,33 @@ export function CreateOrder() {
     email: "",
     address: "",
     product_id: "",
-    sales_price: 0,
-    production_price: 0,
-    discount_price: 0,
+    quantity: 1,
     delivery_charge: 0,
     order_source: "",
     notes: "",
     status: "Pending-Moderator"
   })
 
+  const selectedProduct = products.find(p => p.id === formData.product_id)
+  const productPrice = selectedProduct ? (selectedProduct.discount_price || selectedProduct.sales_price) : 0
+  const productTotal = productPrice * formData.quantity
+  const grandTotal = productTotal + formData.delivery_charge
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     
-    const selectedProduct = products.find(p => p.id === formData.product_id)
     const orderData = {
       customer_name: formData.name,
       mobile_number: formData.mobile_number,
       email: formData.email,
       address: formData.address,
       product_id: formData.product_id,
+      quantity: formData.quantity,
       order_source: formData.order_source,
       delivery_charge: formData.delivery_charge,
       notes: formData.notes,
       moderator_id: user?.id,
       status: formData.status,
-      sales_price: selectedProduct?.sales_price || 0,
-      production_price: selectedProduct?.production_price || 0,
-      discount_price: selectedProduct?.discount_price || 0,
     }
 
     createOrder(orderData)
@@ -62,9 +63,7 @@ export function CreateOrder() {
       email: "",
       address: "",
       product_id: "",
-      sales_price: 0,
-      production_price: 0,
-      discount_price: 0,
+      quantity: 1,
       delivery_charge: 0,
       order_source: "",
       notes: "",
@@ -122,7 +121,7 @@ export function CreateOrder() {
                   id="mobile_number"
                   value={formData.mobile_number}
                   onChange={(e) => handleChange('mobile_number', e.target.value)}
-                  placeholder="+1234567890"
+                  placeholder="+88 01XXXXXXXXX"
                   required
                 />
               </div>
@@ -167,7 +166,7 @@ export function CreateOrder() {
                 type="number"
                 step="0.01"
                 value={formData.delivery_charge}
-                onChange={(e) => handleChange('delivery_charge', parseFloat(e.target.value))}
+                onChange={(e) => handleChange('delivery_charge', parseFloat(e.target.value) || 0)}
                 placeholder="0.00"
                 required
               />
@@ -184,21 +183,56 @@ export function CreateOrder() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="product">Product *</Label>
-              <Select value={formData.product_id} onValueChange={(value) => handleChange('product_id', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select product" />
-                </SelectTrigger>
-                <SelectContent>
-                  {products.map((product) => (
-                    <SelectItem key={product.id} value={product.id}>
-                      {product.name} - ${product.sales_price}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="product">Product *</Label>
+                <Select value={formData.product_id} onValueChange={(value) => handleChange('product_id', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select product" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {products.map((product) => (
+                      <SelectItem key={product.id} value={product.id}>
+                        {product.name} - ৳{product.discount_price || product.sales_price}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="quantity">Quantity *</Label>
+                <Input
+                  id="quantity"
+                  type="number"
+                  min="1"
+                  value={formData.quantity}
+                  onChange={(e) => handleChange('quantity', parseInt(e.target.value) || 1)}
+                  placeholder="1"
+                  required
+                />
+              </div>
             </div>
+            
+            {/* Order Summary */}
+            {selectedProduct && (
+              <div className="mt-4 p-4 border rounded-lg bg-muted/50">
+                <h4 className="font-semibold mb-2">Order Summary</h4>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span>Product ({selectedProduct.name}):</span>
+                    <span>৳{productPrice} × {formData.quantity} = ৳{productTotal}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Delivery Charge:</span>
+                    <span>৳{formData.delivery_charge}</span>
+                  </div>
+                  <div className="flex justify-between font-semibold border-t pt-1">
+                    <span>Grand Total:</span>
+                    <span>৳{grandTotal}</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -249,7 +283,7 @@ export function CreateOrder() {
           >
             Cancel
           </Button>
-          <Button type="submit" className="w-full sm:w-auto" disabled={isCreating}>
+          <Button type="submit" className="w-full sm:w-auto" disabled={isCreating || !formData.product_id}>
             {isCreating ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />

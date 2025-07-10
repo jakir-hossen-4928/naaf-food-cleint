@@ -62,7 +62,7 @@ export function Orders() {
   const getStatusColor = useCallback((status: string) => {
     switch (status) {
       case 'Delivered': return 'default'
-      case 'Pending Moderator': return 'secondary'
+      case 'Pending-Moderator': return 'secondary'
       case 'Cancelled': return 'destructive'
       case 'In Review': return 'outline'
       case 'Package to Confirmation': return 'secondary'
@@ -231,7 +231,7 @@ export function Orders() {
               
               <div className="flex justify-between items-center">
                 <div>
-                  <p className="text-sm">{product?.name || 'N/A'}</p>
+                  <p className="text-sm">{product?.name || 'Product not found'}</p>
                   <p className="text-xs text-muted-foreground">Qty: {order.quantity || 1}</p>
                 </div>
                 <div className="text-right">
@@ -429,10 +429,10 @@ export function Orders() {
                         </TableCell>
                         <TableCell>
                           <div>
-                            <p className="font-medium">{product?.name || 'N/A'}</p>
+                            <p className="font-medium">{product?.name || 'Product not found'}</p>
                             {product && (
                               <p className="text-sm text-muted-foreground">
-                                {formatCurrency(product.discount_price || product.sales_price)}
+                                ৳{product.discount_price || product.sales_price}
                               </p>
                             )}
                           </div>
@@ -447,12 +447,12 @@ export function Orders() {
                         </TableCell>
                         <TableCell>
                           <div className="space-y-1">
-                            <p className="font-semibold">{formatCurrency(grandTotal)}</p>
+                            <p className="font-semibold">৳{grandTotal}</p>
                             <p className="text-xs text-muted-foreground">
-                              Product: {formatCurrency(totalAmount)}
+                              Product: ৳{totalAmount}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              Delivery: {formatCurrency(deliveryCharge)}
+                              Delivery: ৳{deliveryCharge}
                             </p>
                           </div>
                         </TableCell>
