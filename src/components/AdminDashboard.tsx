@@ -53,37 +53,36 @@ export const AdminDashboard = () => {
   const filteredTasks = selectedModerator === "all" ? tasks : tasks.filter(t => t.assigned_to === selectedModerator);
   const filteredFollowUps = selectedModerator === "all" ? followUps : followUps.filter(f => f.moderator_id === selectedModerator);
 
-  // Calculate comprehensive statistics
+  // Calculate statistics using actual server fields
   const totalOrders = filteredOrders.length;
   const deliveredOrders = filteredOrders.filter(o => o.status === 'Delivered').length;
-  const pendingOrders = filteredOrders.filter(o => o.status === 'Pending Moderator').length;
+  const pendingOrders = filteredOrders.filter(o => o.status === 'Pending-Moderator').length;
   const cancelledOrders = filteredOrders.filter(o => o.status === 'Cancelled').length;
   const shippedOrders = filteredOrders.filter(o => o.status === 'Shipped').length;
   const pendingTasks = filteredTasks.filter(t => t.status === 'Pending').length;
   const highPriorityTasks = filteredTasks.filter(t => t.priority === 'High' && t.status === 'Pending').length;
   
-  // Calculate revenue from delivered orders
+  // Calculate revenue using actual server fields
   const totalRevenue = filteredOrders
     .filter(o => o.status === 'Delivered')
     .reduce((sum, order) => {
-      const product = products.find(p => p.id === order.product_id);
-      const salesPrice = product ? parseFloat(product.sales_price) || 0 : 0;
+      const orderTotal = parseFloat(order.total_amount) || 0;
       const deliveryCharge = parseFloat(order.delivery_charge) || 0;
-      return sum + salesPrice + deliveryCharge;
+      return sum + orderTotal + deliveryCharge;
     }, 0);
 
-  // Calculate fraud detection stats
-  const ordersWithFraudCheck = filteredOrders.filter(o => o.fraud_result && o.fraud_result !== '{}').length;
+  // Calculate tracking stats using actual server fields
+  const ordersWithTracking = filteredOrders.filter(o => o.steadfast_tracking_id && o.steadfast_tracking_id !== '').length;
   const ordersNeedingTracking = filteredOrders.filter(o => !o.steadfast_tracking_id && o.status !== 'Cancelled' && o.status !== 'Delivered').length;
 
   const statusCounts = {
-    'Pending Moderator': pendingOrders,
+    'Pending-Moderator': pendingOrders,
     'Delivered': deliveredOrders,
     'Cancelled': cancelledOrders,
     'Shipped': shippedOrders,
   };
 
-  // Get recent activities
+  // Get recent activities using actual server fields
   const recentOrders = filteredOrders
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .slice(0, 5);
@@ -244,14 +243,8 @@ export const AdminDashboard = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm">Fraud Checked Orders:</span>
-              <span className="font-semibold">{ordersWithFraudCheck}/{totalOrders}</span>
-            </div>
-            <div className="flex items-center justify-between">
               <span className="text-sm">Orders with Tracking:</span>
-              <span className="font-semibold">
-                {orders.filter(o => o.steadfast_tracking_id).length}/{totalOrders}
-              </span>
+              <span className="font-semibold">{ordersWithTracking}/{totalOrders}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm">Task Completion Rate:</span>
@@ -265,6 +258,12 @@ export const AdminDashboard = () => {
                 ৳{deliveredOrders ? Math.round(totalRevenue/deliveredOrders) : 0}
               </span>
             </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm">Active Products:</span>
+              <span className="font-semibold">
+                {products.filter(p => p.status === 'Active').length}/{products.length}
+              </span>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -274,34 +273,40 @@ export const AdminDashboard = () => {
         <Card>
           <CardHeader>
             <CardTitle>Recent Orders</CardTitle>
-            <CardDescription>Latest order activities across all moderators</CardDescription>
+            <CardDescription>Latest order activities</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {recentOrders.map((order) => (
-              <div key={order.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-2 border-b last:border-b-0">
-                <div>
-                  <p className="font-medium text-sm">{order.customer_name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {order.order_id} • {new Date(order.created_at).toLocaleDateString()}
-                    {order.order_source && ` • ${order.order_source}`}
-                  </p>
+            {recentOrders.map((order) => {
+              const product = products.find(p => p.id === order.product_id);
+              return (
+                <div key={order.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-2 border-b last:border-b-0">
+                  <div>
+                    <p className="font-medium text-sm">{order.customer_name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {order.order_id} • {new Date(order.created_at).toLocaleDateString()}
+                      {order.order_source && ` • ${order.order_source}`}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {product?.name || 'Product'} • Qty: {order.quantity || 1}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {!order.steadfast_tracking_id && order.status !== 'Cancelled' && (
+                      <Badge variant="outline" className="text-xs">No Tracking</Badge>
+                    )}
+                    <Badge 
+                      variant={
+                        order.status === 'Delivered' ? 'default' : 
+                        order.status === 'Cancelled' ? 'destructive' : 'secondary'
+                      } 
+                      className="text-xs"
+                    >
+                      {order.status}
+                    </Badge>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  {!order.steadfast_tracking_id && order.status !== 'Cancelled' && (
-                    <Badge variant="outline" className="text-xs">No Tracking</Badge>
-                  )}
-                  <Badge 
-                    variant={
-                      order.status === 'Delivered' ? 'default' : 
-                      order.status === 'Cancelled' ? 'destructive' : 'secondary'
-                    } 
-                    className="text-xs"
-                  >
-                    {order.status}
-                  </Badge>
-                </div>
-              </div>
-            ))}
+              );
+            })}
             {recentOrders.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-6">No orders yet</p>
             )}
@@ -315,7 +320,7 @@ export const AdminDashboard = () => {
           </CardHeader>
           <CardContent className="space-y-3">
             {recentTasks.map((task) => (
-              <div key={task.task_id} className="flex flex-col gap-2 pb-2 border-b last:border-b-0">
+              <div key={task.task_id || task.id} className="flex flex-col gap-2 pb-2 border-b last:border-b-0">
                 <div className="flex items-start justify-between gap-2">
                   <p className="font-medium text-sm line-clamp-2 flex-1">{task.task_details}</p>
                   <Badge 
@@ -329,8 +334,8 @@ export const AdminDashboard = () => {
                   </Badge>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Order: {task.order_id} • 
-                  {task.due_date && ` Due: ${new Date(task.due_date).toLocaleDateString()}`}
+                  Order: {task.order_id}
+                  {task.due_date && ` • Due: ${new Date(task.due_date).toLocaleDateString()}`}
                   {task.assigned_to && ` • Assigned`}
                 </p>
               </div>
